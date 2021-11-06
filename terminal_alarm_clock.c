@@ -9,24 +9,24 @@
 #include <vlc/vlc.h>
 #include "terminal_alarm_clock.h"
 
-#define _BSD_SOURCE
+// #define _BSD_SOURCE
 
 // #define A_DAY_SEC (86400)
 
 // #define BUF_SIZE 10
-// #define ALARM_LIST_SIZE 128
+// #define ALARM_LIST_SIZE 30
 // #define ALARM_STRING_SIZE 10
 
 
-// char current_time_formatted_string[100];
-// char *alarm_list[ALARM_LIST_SIZE] = {NULL};
-// time_t alarm_list_epochtime[ALARM_LIST_SIZE] = {0};
-// int alarm_count = 0;
 
-// int is_alarm_list_read = 0;
+char current_time_formatted_string[100];
+char *alarm_list[ALARM_LIST_SIZE] = {NULL};
+time_t alarm_list_epochtime[ALARM_LIST_SIZE] = {0};
+int alarm_count = 0;
+int is_alarm_list_read = 0;
 
-// pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-// pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 
 time_t setted_time_to_epochtime_format(char *alarm_setted_time_string){
@@ -78,7 +78,6 @@ time_t clocktime_to_sec(char *clocktime){
 }
 
 void alarm_list_sorting(){
-    int h,m,s;
     unsigned long int temp_time_1, temp_time_2;
     char temp[10] = {'\0'};
     for(int i=0 ; i<alarm_count-1 ; i++){
@@ -101,7 +100,7 @@ int alarm_go_off_trigger(time_t epochtime){
             break;
         }
         if(epochtime == alarm_list_epochtime[i]){
-            return 1;
+            return i;
         }
     }
     return -1;
@@ -119,7 +118,7 @@ void *alarm_player_routine(void *arg){
     libvlc_media_t *m;
 
     inst = libvlc_new(0, NULL);
-    m = libvlc_media_new_path(inst, "./alarm_ring_tone/te");
+    m = libvlc_media_new_path(inst, "./alarm_ringtone/ringtone_example");
     mp = libvlc_media_player_new_from_media(m);
     libvlc_media_release(m);
     libvlc_media_player_play(mp);
@@ -134,7 +133,7 @@ void *get_current_time(void *arg){
     
     time_t now;
     struct tm *time_info;
-    pthread_t alarm_player;
+    pthread_t alarm_player, refresh_list_print;
 
     // struct timespec timeout;
     // timeout.tv_sec = time(NULL) + 1;
@@ -169,17 +168,26 @@ void *get_current_time(void *arg){
             printf("localtime(&now) failed %s %d\n", __FUNCTION__, __LINE__);
             exit(1);
         }
-        if(is_alarm_list_read && (alarm_go_off_trigger(now) == 1)){
-            pthread_create(&alarm_player, NULL, alarm_player_routine, NULL);
+        if(is_alarm_list_read){
+            int alarm_went_off_index = alarm_go_off_trigger(now);
+            if(alarm_went_off_index != (-1)){
+                mark_went_off_one(alarm_went_off_index);
+                pthread_create(&refresh_list_print, NULL, print_list_routine, NULL);
+                pthread_create(&alarm_player, NULL, alarm_player_routine, NULL);
+            }
         }
-        strftime(current_time_formatted_string, sizeof(current_time_formatted_string), "%Y-%m-%d %A %H:%M:%S %Z", time_info);
+        strftime(
+            current_time_formatted_string, 
+            sizeof(current_time_formatted_string), 
+            "%Y-%m-%d %A %H:%M:%S %Z", time_info
+        );
         move(0, 0);
         clrtoeol();
         printw("%s\n", current_time_formatted_string);
         refresh();
 
         status = pthread_mutex_unlock(&mutex);
-        if(status != 0 ){
+        if(status != 0){
             printf("get_current_time mutex unlock failed\n");
             exit(1);
         }
@@ -205,6 +213,13 @@ void get_epochtime_alarm_list(void){
     for(int i=0 ; i<alarm_count ; i++){
         alarm_list_epochtime[i] = setted_time_to_epochtime_format(alarm_list[i]);
     }
+}
+
+void mark_went_off_one(int index){
+    size_t str_len = strlen(alarm_list[index]);
+    *( alarm_list[index] + str_len - 1 ) = '\t';
+    *( alarm_list[index] + str_len     ) = '*';
+    *( alarm_list[index] + str_len + 1 ) = '\n';
 }
 
 void *read_list_routine(void *arg){
@@ -235,7 +250,8 @@ void *read_list_routine(void *arg){
     }
 
     char *input_alarm_str;
-    size_t str_size;
+    size_t allocate_str_buf;
+    size_t str_len;
     do{
         input_alarm_str = fgets(buf, BUF_SIZE, alarm_list_file);
         if(input_alarm_str == NULL){
@@ -244,20 +260,21 @@ void *read_list_routine(void *arg){
         if(alarm_list_format_validate(input_alarm_str) == -1){
             continue;
         }
-        str_size = strlen(input_alarm_str);
+        allocate_str_buf = strlen(input_alarm_str) + 12;
+        alarm_list[alarm_count] = malloc((allocate_str_buf) * sizeof(char));
+        strncpy(alarm_list[alarm_count], input_alarm_str, allocate_str_buf);
+        str_len = strlen(alarm_list[alarm_count]);
 
-        alarm_list[alarm_count] = malloc((str_size) * sizeof(char));
-        strncpy(alarm_list[alarm_count], input_alarm_str, str_size);
-        if(*(alarm_list[alarm_count] + (str_size-1)) != '\n'){
-            *(alarm_list[alarm_count] + (str_size)) = '\n';
+        if( *( alarm_list[alarm_count] + str_len - 1 ) != '\n'){
+            *( alarm_list[alarm_count] + str_len ) = '\n';
         }
+
         alarm_count++;
     }while(input_alarm_str != NULL);
 
     fclose(alarm_list_file);
     alarm_list_sorting();
     get_epochtime_alarm_list();
-
     is_alarm_list_read = 1;
     
     status = pthread_create(&print_alarm_list, NULL, print_list_routine, NULL);
@@ -345,8 +362,6 @@ int main(int argc, char *argv[]){
     
     
     pthread_exit(NULL);
-
-
     endwin();   
     return 0;
 }
