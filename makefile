@@ -1,6 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -std=gnu99 -ggdb
-CFLAGS =  -std=gnu99
+CFLAGS = -Wall -Werror -std=c99 -ggdb
 LDFLAGS = -lpthread -lncurses -lvlc
 
 all: terminal_alarm_clock
