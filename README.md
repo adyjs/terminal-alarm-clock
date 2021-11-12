@@ -61,3 +61,10 @@ $ make
 $ cd terminal-alarm-clock/  && ./terminal-alarm-clock
 
 ```
+
+### Clock running
+![alarm_clock_running](./README.files/alarm_clock_pic1.png)
+
+
+### Clock running and alarm goes-off 
+![alarm_clock_running_and_went_off](./README.files/alarm_clock_pic2.png)
