@@ -29,4 +29,4 @@ void *read_list_routine(void *);
 
 void *print_list_routine(void *);
 
-void mark_went_off_one(int);
+void mark_goes_off_one(int);

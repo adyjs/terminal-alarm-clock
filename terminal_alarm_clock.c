@@ -171,7 +171,7 @@ void *get_current_time(void *arg){
         if(is_alarm_list_read){
             int alarm_went_off_index = alarm_go_off_trigger(now);
             if(alarm_went_off_index != (-1)){
-                mark_went_off_one(alarm_went_off_index);
+                mark_goes_off_one(alarm_went_off_index);
                 pthread_create(&refresh_list_print, NULL, print_list_routine, NULL);
                 pthread_create(&alarm_player, NULL, alarm_player_routine, NULL);
             }
@@ -215,7 +215,7 @@ void get_epochtime_alarm_list(void){
     }
 }
 
-void mark_went_off_one(int index){
+void mark_goes_off_one(int index){
     size_t str_len = strlen(alarm_list[index]);
     *( alarm_list[index] + str_len - 1 ) = '\t';
     *( alarm_list[index] + str_len     ) = '*';
