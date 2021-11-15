@@ -15,7 +15,7 @@ time_t clocktime_to_sec(char *);
 
 void alarm_list_sorting(void);
 
-int alarm_go_off_trigger(time_t);
+int alarm_goes_off_trigger(time_t);
 
 void *alarm_player_routine(void *);
 

@@ -94,7 +94,7 @@ void alarm_list_sorting(){
     }
 }
 
-int alarm_go_off_trigger(time_t epochtime){
+int alarm_goes_off_trigger(time_t epochtime){
     for(int i=0 ; i<alarm_count ; i++){
         if(alarm_list_epochtime[i] == 0){
             break;
@@ -169,7 +169,7 @@ void *get_current_time(void *arg){
             exit(1);
         }
         if(is_alarm_list_read){
-            int alarm_went_off_index = alarm_go_off_trigger(now);
+            int alarm_went_off_index = alarm_goes_off_trigger(now);
             if(alarm_went_off_index != (-1)){
                 mark_goes_off_one(alarm_went_off_index);
                 pthread_create(&refresh_list_print, NULL, print_list_routine, NULL);
@@ -308,17 +308,6 @@ void *print_list_routine(void *arg){
         exit(1);
     }
 
-
-    // struct timespec timeout;
-    // timeout.tv_sec = time(NULL);
-    // timeout.tv_nsec = 0;
-
-    // status = pthread_cond_timedwait(&cond, &mutex, &timeout);
-    // if(status != ETIMEDOUT && status != 0 ){
-    //     printf("status %d\n", status);
-    //     printf("get_current_time pthread_cond_timedwait failed %s %d\n", __FUNCTION__, __LINE__);
-    //     exit(1);
-    // }
 
     int x = 0;
     int y = 5;
