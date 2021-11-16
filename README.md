@@ -5,7 +5,7 @@
 ### 1. Install packages
 
 ```
-$ apt install libncurses-dev   libvlc-dev
+$ apt install libncurses-dev libvlc-dev
 
 
 # libncurses-dev is a library and software for terminal handling 
@@ -22,13 +22,14 @@ $ cd terminal-alarm-clock/ && make
 
 ### 3. Configure yours alarm time-code list
 
-Edit terminal-alarm-clock/alarm_list 
+Edit alarm_list file, set the time-codes.  
 
 
 
 ### 4. You could put your favorite audio for alarm went-off audio
 
 for example:
+
 Your audio file name is "MY_FAVORITE_MUSIC", and put it into MY_DIRECTORY
 
 so your file path is 
@@ -36,9 +37,9 @@ so your file path is
 ./MY_DIRECTORY/MY_FAVORITE_MUSIC
 ```
 
-Edit terminal-alarm-clock/terminal-alarm-clock.c 
+Edit ./src/audio_player.c 
 
-find the runction "alarm_player_routine" below
+find the function signature called : "alarm_player_routine"
 
 ```c
 
@@ -50,8 +51,10 @@ m = libvlc_media_new_path(inst, "./alarm_ringtone/ringtone_example");
 to :
 m = libvlc_media_new_path(inst, "./MY_DIRECTORY/MY_FAVORITE_MUSIC");
 
-then :
+then, execute the commands
+
 $ make clean
+
 $ make
 
 ```
